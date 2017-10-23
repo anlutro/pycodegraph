@@ -1,3 +1,4 @@
+import pytest
 import os.path
 from pycodegraph.code import *
 
@@ -40,3 +41,18 @@ def test_module_exists_on_filesystem():
 	assert not module_exists_on_filesystem('test_code', path)
 	assert not module_exists_on_filesystem('unit.test_code', path)
 	assert module_exists_on_filesystem('tests.unit.test_code', path)
+
+
+@pytest.mark.parametrize('mod, path, root, expect', [
+	('..bar', '/path/to/foo/bar/baz.py', 'foo', 'foo.bar'),
+	('..baz', '/path/to/foo/bar/baz.py', 'foo', 'foo.baz'),
+	('..baz.bar', '/path/to/foo/bar/baz.py', 'foo', 'foo.baz.bar'),
+	('.bar', '/path/to/foo/bar/baz.py', 'foo', 'foo.bar.bar'),
+])
+def test_resolve_relative_module(mod, path, root, expect):
+	assert resolve_relative_module(mod, path, root) == expect
+
+
+def test_resolve_relative_with_too_many_dots():
+	with pytest.raises(ValueError):
+		resolve_relative_module('...foo', '/path/to/foo/bar.py', 'foo')

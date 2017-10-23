@@ -5,6 +5,7 @@ import ast
 import logging
 import os
 import os.path
+import importlib.util
 
 log = logging.getLogger()
 
@@ -68,7 +69,32 @@ def find_imports_in_file(path):
 		return find_imports_in_code(f.read())
 
 
-def find_imports_in_code(code, path=None):
+def find_root_module_path(path, root_module):
+	orig_path = path
+	root_end_part = root_module.replace('.', '/')
+	while not path.endswith('/' + root_end_part):
+		path = os.path.dirname(path)
+		if path == '/':
+			raise ValueError('could not find root module %r path based on %r' % (root_module, orig_path))
+	return path
+
+
+def resolve_relative_module(module, path, root_module=None, root_path=None):
+	if root_path is None:
+		root_path = path
+		while not root_path.endswith('/' + root_module):
+			root_path = os.path.dirname(root_path)
+		# we need to get the parent directory of the root module directory for
+		# relpath to include the full module "path"
+		root_path = os.path.dirname(root_path)
+
+	importing_from_dir = os.path.dirname(path)
+	importing_from_path = os.path.relpath(importing_from_dir, root_path)
+	importing_from_module = importing_from_path.replace('.py', '').replace('/', '.')
+	return importlib.util.resolve_name(module, importing_from_module)
+
+
+def find_imports_in_code(code, path=None, root_module=None):
 	"""
 	Parse some Python code, finding all imports.
 	"""
@@ -83,11 +109,19 @@ def find_imports_in_code(code, path=None):
 		# variable or submodule from x, so that will need to be figured out
 		# later on in this script
 		if isinstance(node, ast.ImportFrom):
+			module = node.module
+
+			# relative imports
+			if node.level > 0:
+				module = '.' * node.level + module
+				if path and root_module:
+					module = resolve_relative_module(module, node.level, path, root_module)
+
 			for name in node.names:
 				if name.name == '*':
-					yield node.module
+					yield module
 				else:
-					yield '%s.%s' % (node.module, name.name)
+					yield '%s.%s' % (module, name.name)
 		elif isinstance(node, ast.Import):
 			for name in node.names:
 				yield name.name
