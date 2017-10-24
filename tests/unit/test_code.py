@@ -43,17 +43,17 @@ def test_module_exists_on_filesystem():
 	assert module_exists_on_filesystem('tests.unit.test_code', path)
 
 
-@pytest.mark.parametrize('mod, path, root, expect', [
-	('..bar', '/path/to/foo/bar/baz.py', 'foo', 'foo.bar'),
-	('..baz', '/path/to/foo/bar/baz.py', 'foo', 'foo.baz'),
-	('..baz.bar', '/path/to/foo/bar/baz.py', 'foo', 'foo.baz.bar'),
-	('.bar', '/path/to/foo/bar/baz.py', 'foo', 'foo.bar.bar'),
-	('.', '/path/to/foo/bar/baz.py', 'foo', 'foo.bar'),
+@pytest.mark.parametrize('mod, level, path, root, expect', [
+	('bar', 2, '/path/to/foo/bar/baz.py', 'foo', 'foo.bar'),
+	('baz', 2, '/path/to/foo/bar/baz.py', 'foo', 'foo.baz'),
+	('baz.bar', 2, '/path/to/foo/bar/baz.py', 'foo', 'foo.baz.bar'),
+	('bar', 1, '/path/to/foo/bar/baz.py', 'foo', 'foo.bar.bar'),
+	('', 1, '/path/to/foo/bar/baz.py', 'foo', 'foo.bar'),
 ])
-def test_resolve_relative_module(mod, path, root, expect):
-	assert resolve_relative_module(mod, path, root) == expect
+def test_resolve_relative_module(mod, level, path, root, expect):
+	assert resolve_relative_module(mod, level, path, root) == expect
 
 
 def test_resolve_relative_with_too_many_dots():
 	with pytest.raises(ValueError):
-		resolve_relative_module('...foo', '/path/to/foo/bar.py', 'foo')
+		resolve_relative_module('foo', 3, '/path/to/foo/bar.py', 'foo')

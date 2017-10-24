@@ -5,7 +5,6 @@ import ast
 import logging
 import os
 import os.path
-import importlib.util
 
 log = logging.getLogger()
 
@@ -83,7 +82,7 @@ def find_root_module_path(path, root_module):
 	return path
 
 
-def resolve_relative_module(module, path, root_module=None, root_path=None):
+def resolve_relative_module(module, level, path, root_module=None, root_path=None):
 	path = os.path.abspath(path)
 	if root_path is None:
 		root_path = path
@@ -99,7 +98,13 @@ def resolve_relative_module(module, path, root_module=None, root_path=None):
 	importing_from_dir = os.path.dirname(path)
 	importing_from_path = os.path.relpath(importing_from_dir, root_path)
 	importing_from_module = importing_from_path.replace('.py', '').replace('/', '.')
-	return importlib.util.resolve_name(module, importing_from_module)
+
+	# copied from python stdlib
+	bits = importing_from_module.rsplit('.', level - 1)
+	if len(bits) < level:
+		raise ValueError('attempted relative import beyond top-level package')
+	base = bits[0]
+	return '{}.{}'.format(base, module) if module else base
 
 
 def find_imports_in_code(code, path=None, root_module=None):
@@ -123,7 +128,12 @@ def find_imports_in_code(code, path=None, root_module=None):
 			if node.level > 0:
 				module = ('.' * node.level) + (module if module else '')
 				if path and root_module:
-					module = resolve_relative_module(module, path, root_module)
+					module = resolve_relative_module(
+						module,
+						node.level,
+						path,
+						root_module=root_module,
+					)
 
 			for name in node.names:
 				if name.name == '*':
