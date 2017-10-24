@@ -256,17 +256,19 @@ class ImportAnalysis():
 				module_import, self.search
 			)
 
-			if is_in_include or is_in_search:
-				if not is_in_include:
-					short_import = self.find_module(short_import)
-					if not short_import:
-						log.debug('skipping import %r, could not find it on '
-							'the filesystem', module_import)
-						continue
-				imports.add((short_module, short_import))
-			else:
+			if not is_in_include and not is_in_search:
 				log.debug('skipping import %r, it is not in include or search',
 					module_import)
+				continue
+
+			if not is_in_include:
+				short_import = self.find_module(short_import)
+				if not short_import:
+					log.debug('skipping import %r, could not find it on the filesystem',
+						module_import)
+					continue
+
+			imports.add((short_module, short_import))
 
 		return imports
 
