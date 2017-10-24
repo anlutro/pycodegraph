@@ -80,7 +80,7 @@ def find_root_module_path(path, root_module):
 		path = os.path.dirname(path)
 		if path == '/':
 			raise ValueError('could not find root module %r path based on %r' % (root_module, orig_path))
-	return path
+	return os.path.dirname(path)
 
 
 def resolve_relative_module(path, module, level=None, root_module=None, root_path=None):
@@ -89,13 +89,10 @@ def resolve_relative_module(path, module, level=None, root_module=None, root_pat
 		if root_module is None:
 			raise ValueError('Must provider root_module or root_path!')
 		root_path = find_root_module_path(path, root_module)
-		# we need to get the parent directory of the root module directory for
-		# relpath to include the full module "path"
-		root_path = os.path.dirname(root_path)
 
-	importing_from_dir = os.path.dirname(path)
-	importing_from_path = os.path.relpath(importing_from_dir, root_path)
-	importing_from_module = importing_from_path.replace('.py', '').replace('/', '.')
+	src_dir = os.path.dirname(path)
+	src_path = os.path.relpath(src_dir, root_path)
+	src_module = src_path.replace('.py', '').replace('/', '.')
 
 	if level is None:
 		level = 0
@@ -105,7 +102,7 @@ def resolve_relative_module(path, module, level=None, root_module=None, root_pat
 			level += 1
 		module = module[level:]
 
-	bits = importing_from_module.rsplit('.', level - 1)
+	bits = src_module.rsplit('.', level - 1)
 	if len(bits) < level:
 		raise ValueError('attempted relative import beyond top-level package')
 	base = bits[0]
@@ -178,6 +175,7 @@ def module_exists_on_filesystem(module, path, root_module=None):
 		path = find_root_module_path(path, root_module)
 
 	module_path = os.path.join(path, module.replace('.', '/'))
+	log.debug('module_path=%r', module_path)
 
 	return os.path.isfile(module_path + '.py') or (
 		os.path.isdir(module_path) and
@@ -185,91 +183,104 @@ def module_exists_on_filesystem(module, path, root_module=None):
 	)
 
 
-def find_imports(path, depth=0, include=None, exclude=None):
-	"""
-	Find all interesting imports in all python files in a directory.
+class CodeAnalysis():
+	def __init__(self, path, depth=0, include=None, exclude=None):
+		self.path = path
+		self.depth = depth
+		self.include = include
+		self.exclude = exclude
 
-	Args:
-	  path (str): Path to the directory of code.
-	  depth (int): Number of submodules to traverse into.
-	  include (seq): Additional modules that you want to track imports of.
-	  exclude (seq): Names of submodules to exclude from the results.
-	"""
-	if exclude is None:
-		exclude = []
+		self.root_module = find_root_module(path)
+		log.info('guessed root module to be %r', self.root_module)
+		self.root_path = find_root_module_path(path, self.root_module)
+		log.info('guessed root path to be %r', self.root_path)
 
-	root_module = find_root_module(path)
-	module_files = list(find_module_files(path, exclude=exclude))
-	log.info('found %d module files', len(module_files))
+		self.module_files = list(find_module_files(
+			self.path, exclude=self.exclude
+		))
+		log.info('found %d module files', len(self.module_files))
 
-	imports_to_search_for = set(
-		shorten_module(module, depth) for module, path in module_files
-	)
-	if include:
-		imports_to_search_for.update(include)
-	log.info('imports_to_search_for: %r', sorted(imports_to_search_for))
+		self.search = set(
+			shorten_module(module, self.depth)
+			for module, path in self.module_files
+		)
+		log.info(
+			'imports to search for: %r + %r',
+			sorted(self.search),
+			sorted(self.include),
+		)
 
-	imports = set()
+	def module_exists(self, module):
+		return module_exists_on_filesystem(
+			module, self.path, root_module=self.root_module
+		)
 
-	def analyze_import(module, module_import):
-		"""
-		Analyze a single import and add it to the "imports" set if it is
-		relevant to what the user asked for.
-		"""
-		module_import = shorten_module(module_import, depth)
-		if module == module_import:
-			log.debug('skipping self-importing module %r', module)
-			return
-
-		if not module_matches(module_import, imports_to_search_for, allow_fnmatch=True):
-			log.debug('skipping import %r, it is not in imports_to_search_for', module_import)
-			return
-
-		include_match = module_matches(module_import, include)
-		module_import_path = module_exists_on_filesystem(module_import, path, root_module)
+	def find_module(self, module):
+		if self.module_exists(module):
+			return module
 
 		# because with imports like `from a.b import c` there's no way for
 		# us to know if c is a function or a submodule, we have to check for
 		# both the module itself as well as its parent
-		if not module_import_path:
-			parent_module_import = '.'.join(module_import.split('.')[:-1])
-			module_import_path = module_exists_on_filesystem(
-				parent_module_import, path, root_module
-			)
-			if module_import_path:
-				module_import = parent_module_import
+		parent = '.'.join(module.split('.')[:-1])
+		if self.module_exists(parent):
+			return parent
 
-		if module_import_path or include_match:
-			log.debug('adding %r -> %r (module_import_path=%r, include_match=%r)',
-				module, module_import, module_import_path, include_match)
-			imports.add((module, module_import))
-		else:
-			log.debug('skipping %r -> %r (module_import_path=%r, include_match=%r)',
-				module, module_import, module_import_path, include_match)
+		return False
 
-	def analyze_file(module, module_path):
+	def find_imports_in_file(self, module, module_path):
 		"""
 		Scan a file for imports and add the relevant ones to the "imports" set.
 		"""
 		module_parts = module.split('.')
 		module_path_parts = module_path.split('/')
-		if exclude and (
-			any(e in module_parts for e in exclude)
-			or any(e in module_path_parts for e in exclude)
+		if self.exclude and (
+			any(e in module_parts for e in self.exclude)
+			or any(e in module_path_parts for e in self.exclude)
 		):
 			log.debug('skipping module because it is in exclude: %r (%s)',
 				module_path, module)
-			return
+			return []
 
-		shortened_module = shorten_module(module, depth)
-		module_imports = list(find_imports_in_file(module_path, root_module))
-		log.debug('found %d imports in %r (shortened_module=%r)',
-			len(module_imports), module_path, shortened_module)
+		short_module = shorten_module(module, self.depth)
+
+		module_imports = list(find_imports_in_file(module_path, self.root_module))
+		log.debug('found %d imports in %r', len(module_imports), module_path)
+
+		imports = set()
 
 		for module_import in module_imports:
-			analyze_import(shortened_module, module_import)
+			short_import = shorten_module(module_import, self.depth)
 
-	for module, module_path in module_files:
-		analyze_file(module, module_path)
+			if short_module == short_import:
+				log.debug('skipping self-import %r -> %r', module, module_import)
+				continue
 
-	return imports
+			is_in_include = module_matches(module_import, self.include, allow_fnmatch=True)
+			is_in_search = module_matches(module_import, self.search)
+
+			if is_in_include or is_in_search:
+				if not is_in_include:
+					short_import = self.find_module(short_import)
+					if not short_import:
+						log.debug('skipping import %r, could not find it on the filesystem', module_import)
+				imports.add((short_module, short_import))
+			else:
+				log.debug('skipping import %r, it is not in include or search', module_import)
+
+		return imports
+
+	def find_imports(self):
+		imports = set()
+
+		for module, module_path in self.module_files:
+			imports.update(
+				self.find_imports_in_file(module, module_path)
+			)
+
+		return imports
+
+
+def find_imports(path, depth=0, include=None, exclude=None):
+	ca = CodeAnalysis(path, depth=depth, include=include, exclude=exclude)
+	return ca.find_imports()
