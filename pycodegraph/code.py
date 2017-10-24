@@ -28,16 +28,17 @@ def find_root_module(path):
 	return '.'.join(reversed(module_parts))
 
 
-def find_module_files(root_path, exclude):
+def find_module_files(root_path, exclude, root_module=None):
 	"""
 	Given a path, find all python files in that path and guess their module
 	names. Generates tuples of (module, path).
 	"""
+	if root_module is None:
+		root_module = find_root_module(root_path)
+		log.debug('resolved path %r to root_module %r', root_path, root_module)
+
 	def dir_excluded(path):
 		return path in exclude or path.startswith('.')
-
-	root_module = find_root_module(root_path)
-	log.debug('resolved path %r to root_module %r', root_path, root_module)
 
 	for root, dirs, files in os.walk(root_path):
 		# prevents os.walk from recursing excluded directories
@@ -60,7 +61,7 @@ def find_module_files(root_path, exclude):
 				yield module, path
 
 
-def find_imports_in_file(path, root_module=None):
+def find_imports_in_file(path, root_path=None):
 	"""
 	Parse a python file, finding all imports.
 	"""
@@ -68,27 +69,12 @@ def find_imports_in_file(path, root_module=None):
 		return find_imports_in_code(
 			filehandle.read(),
 			path=path,
-			root_module=root_module,
+			root_path=root_path,
 		)
 
 
-def find_root_module_path(path, root_module):
+def resolve_relative_module(path, module, root_path, level=None):
 	path = os.path.abspath(path)
-	orig_path = path
-	root_end_part = root_module.replace('.', '/')
-	while not path.endswith('/' + root_end_part):
-		path = os.path.dirname(path)
-		if path == '/':
-			raise ValueError('could not find root module %r path based on %r' % (root_module, orig_path))
-	return os.path.dirname(path)
-
-
-def resolve_relative_module(path, module, level=None, root_module=None, root_path=None):
-	path = os.path.abspath(path)
-	if root_path is None:
-		if root_module is None:
-			raise ValueError('Must provider root_module or root_path!')
-		root_path = find_root_module_path(path, root_module)
 
 	src_dir = os.path.dirname(path)
 	src_path = os.path.relpath(src_dir, root_path)
@@ -109,7 +95,7 @@ def resolve_relative_module(path, module, level=None, root_module=None, root_pat
 	return '{}.{}'.format(base, module) if module else base
 
 
-def find_imports_in_code(code, path=None, root_module=None, root_path=None):
+def find_imports_in_code(code, path=None, root_path=None):
 	"""
 	Parse some Python code, finding all imports.
 	"""
@@ -128,15 +114,15 @@ def find_imports_in_code(code, path=None, root_module=None, root_path=None):
 
 			# relative imports
 			if node.level > 0:
-				module = ('.' * node.level) + (module if module else '')
-				if path and (root_module or root_path):
+				if path and root_path:
 					module = resolve_relative_module(
-						module,
-						node.level,
-						path,
-						root_module=root_module,
+						path=path,
+						module=module,
 						root_path=root_path,
+						level=node.level,
 					)
+				else:
+					module = ('.' * node.level) + (module if module else '')
 
 			for name in node.names:
 				if name.name == '*':
@@ -178,7 +164,18 @@ def module_exists_on_filesystem(module, path):
 	)
 
 
-class CodeAnalysis():
+def find_root_module_path(path, root_module):
+	path = os.path.abspath(path)
+	orig_path = path
+	root_end_part = root_module.replace('.', '/')
+	while not path.endswith('/' + root_end_part):
+		path = os.path.dirname(path)
+		if path == '/':
+			raise ValueError('could not find root module %r path based on %r' % (root_module, orig_path))
+	return os.path.dirname(path)
+
+
+class ImportAnalysis():
 	def __init__(self, path, depth=0, include=None, exclude=None):
 		self.path = path
 		self.depth = depth
@@ -191,7 +188,7 @@ class CodeAnalysis():
 		log.info('guessed root path to be %r', self.root_path)
 
 		self.module_files = list(find_module_files(
-			self.path, exclude=self.exclude
+			self.path, exclude=self.exclude, root_module=self.root_module
 		))
 		log.info('found %d module files', len(self.module_files))
 
@@ -237,7 +234,7 @@ class CodeAnalysis():
 
 		short_module = shorten_module(module, self.depth)
 
-		module_imports = list(find_imports_in_file(module_path, self.root_module))
+		module_imports = list(find_imports_in_file(module_path, self.root_path))
 		log.debug('found %d imports in %r', len(module_imports), module_path)
 
 		imports = set()
@@ -275,5 +272,7 @@ class CodeAnalysis():
 
 
 def find_imports(path, depth=0, include=None, exclude=None):
-	ca = CodeAnalysis(path, depth=depth, include=include, exclude=exclude)
-	return ca.find_imports()
+	analysis = ImportAnalysis(
+		path, depth=depth, include=include, exclude=exclude
+	)
+	return analysis.find_imports()

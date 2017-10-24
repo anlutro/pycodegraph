@@ -43,28 +43,6 @@ def test_module_exists_on_filesystem():
 	assert module_exists_on_filesystem('tests.unit.test_code', path)
 
 
-@pytest.mark.parametrize('path, mod, level, root, expect', [
-	('/path/to/foo/bar/baz.py', 'bar', 2, 'foo', 'foo.bar'),
-	('/path/to/foo/bar/baz.py', 'baz', 2, 'foo', 'foo.baz'),
-	('/path/to/foo/bar/baz.py', 'baz.bar', 2, 'foo', 'foo.baz.bar'),
-	('/path/to/foo/bar/baz.py', 'bar', 1, 'foo', 'foo.bar.bar'),
-	('/path/to/foo/bar/baz.py', '', 1, 'foo', 'foo.bar'),
-])
-def test_resolve_relative_module_with_level(path, mod, level, root, expect):
-	assert resolve_relative_module(path, mod, level, root) == expect
-
-
-@pytest.mark.parametrize('path, mod, root, expect', [
-	('/path/to/foo/bar/baz.py', '..bar', 'foo', 'foo.bar'),
-	('/path/to/foo/bar/baz.py', '..baz', 'foo', 'foo.baz'),
-	('/path/to/foo/bar/baz.py', '..baz.bar', 'foo', 'foo.baz.bar'),
-	('/path/to/foo/bar/baz.py', '.bar', 'foo', 'foo.bar.bar'),
-	('/path/to/foo/bar/baz.py', '.', 'foo', 'foo.bar'),
-])
-def test_resolve_relative_module_without_level(path, mod, root, expect):
-	assert resolve_relative_module(path, mod, root_module=root) == expect
-
-
 @pytest.mark.parametrize('path, mod, root, expect', [
 	('/path/to/foo/bar/baz.py', '..bar', '/path/to', 'foo.bar'),
 	('/path/to/foo/bar/baz.py', '..baz', '/path/to', 'foo.baz'),
@@ -72,12 +50,23 @@ def test_resolve_relative_module_without_level(path, mod, root, expect):
 	('/path/to/foo/bar/baz.py', '.bar', '/path/to', 'foo.bar.bar'),
 	('/path/to/foo/bar/baz.py', '.', '/path/to', 'foo.bar'),
 ])
-def test_resolve_relative_module_with_root_path(path, mod, root, expect):
-	assert resolve_relative_module(path, mod, root_path=root) == expect
+def test_resolve_relative_module(path, mod, root, expect):
+	assert resolve_relative_module(path, mod, root) == expect
+
+
+@pytest.mark.parametrize('path, mod, root, level, expect', [
+	('/path/to/foo/bar/baz.py', 'bar', '/path/to', 2, 'foo.bar'),
+	('/path/to/foo/bar/baz.py', 'baz', '/path/to', 2, 'foo.baz'),
+	('/path/to/foo/bar/baz.py', 'baz.bar', '/path/to', 2, 'foo.baz.bar'),
+	('/path/to/foo/bar/baz.py', 'bar', '/path/to', 1, 'foo.bar.bar'),
+	('/path/to/foo/bar/baz.py', '', '/path/to', 1, 'foo.bar'),
+])
+def test_resolve_relative_module_with_level(path, mod, root, level, expect):
+	assert resolve_relative_module(path, mod, root, level=level) == expect
 
 
 def test_resolve_relative_with_too_many_dots():
 	with pytest.raises(ValueError):
-		resolve_relative_module('/path/to/foo/bar.py', 'foo', 3, 'foo')
+		resolve_relative_module('/path/to/foo/bar.py', '...foo', '/path/to')
 	with pytest.raises(ValueError):
-		resolve_relative_module('/path/to/foo/bar.py', '...foo', root_module='foo')
+		resolve_relative_module('/path/to/foo/bar.py', 'foo', '/path/to', 3)
