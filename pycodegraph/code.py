@@ -156,7 +156,6 @@ def module_exists_on_filesystem(module, path):
 	the filesystem which corresponds to this module.
 	"""
 	module_path = os.path.join(path, module.replace('.', '/'))
-	log.debug('module_path=%r', module_path)
 
 	return os.path.isfile(module_path + '.py') or (
 		os.path.isdir(module_path) and
