@@ -14,6 +14,18 @@ def test_find_imports():
 	assert imports == ['abc']
 
 
+def test_find_imports_multiple():
+	code = 'import abc, bcd'
+	imports = list(find_imports_in_code(code))
+	assert imports == ['abc', 'bcd']
+
+
+def test_find_from_imports():
+	code = 'from abc import bcd, cde'
+	imports = list(find_imports_in_code(code))
+	assert imports == ['abc.bcd', 'abc.cde']
+
+
 def test_shorten_module():
 	assert 'foo' == shorten_module('foo.bar', 0)
 	assert 'foo' == shorten_module('foo.bar.baz', 0)
