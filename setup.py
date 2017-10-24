@@ -11,7 +11,9 @@ setup(
 	description='Graph Python code.',
 	author='Andreas Lutro',
 	author_email='anlutro@gmail.com',
-	install_requires=['allib'],
+	install_requires=[
+		'allib >= 0.3.0, < 0.4',
+	],
 	entry_points={
 		'console_scripts': [
 			'pycodegraph=pycodegraph.cli:main',
