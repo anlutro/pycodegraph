@@ -61,12 +61,12 @@ def find_module_files(root_path, depth, exclude):
 				yield module, path
 
 
-def find_imports_in_file(path):
+def find_imports_in_file(path, root_module=None):
 	"""
 	Parse a python file, finding all imports.
 	"""
 	with open(path) as f:
-		return find_imports_in_code(f.read())
+		return find_imports_in_code(f.read(), path=path, root_module=root_module)
 
 
 def find_root_module_path(path, root_module):
@@ -80,10 +80,14 @@ def find_root_module_path(path, root_module):
 
 
 def resolve_relative_module(module, path, root_module=None, root_path=None):
+	path = os.path.abspath(path)
 	if root_path is None:
 		root_path = path
 		while not root_path.endswith('/' + root_module):
 			root_path = os.path.dirname(root_path)
+			if root_path == '/':
+				raise ValueError('could not find root path for %s from %r' % (
+					root_module, path))
 		# we need to get the parent directory of the root module directory for
 		# relpath to include the full module "path"
 		root_path = os.path.dirname(root_path)
@@ -113,9 +117,9 @@ def find_imports_in_code(code, path=None, root_module=None):
 
 			# relative imports
 			if node.level > 0:
-				module = '.' * node.level + module
+				module = ('.' * node.level) + (module if module else '')
 				if path and root_module:
-					module = resolve_relative_module(module, node.level, path, root_module)
+					module = resolve_relative_module(module, path, root_module)
 
 			for name in node.names:
 				if name.name == '*':
@@ -239,7 +243,7 @@ def find_imports(path, depth=0, include=None, exclude=None):
 			return
 
 		shortened_module = shorten_module(module, depth)
-		module_imports = list(find_imports_in_file(module_path))
+		module_imports = list(find_imports_in_file(module_path, root_module))
 		log.debug('found %d imports in %r (shortened_module=%r)',
 			len(module_imports), module_path, shortened_module)
 

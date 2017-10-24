@@ -48,6 +48,7 @@ def test_module_exists_on_filesystem():
 	('..baz', '/path/to/foo/bar/baz.py', 'foo', 'foo.baz'),
 	('..baz.bar', '/path/to/foo/bar/baz.py', 'foo', 'foo.baz.bar'),
 	('.bar', '/path/to/foo/bar/baz.py', 'foo', 'foo.bar.bar'),
+	('.', '/path/to/foo/bar/baz.py', 'foo', 'foo.bar'),
 ])
 def test_resolve_relative_module(mod, path, root, expect):
 	assert resolve_relative_module(mod, path, root) == expect
