@@ -57,7 +57,7 @@ def main():
 
 	renderer_module = importlib.import_module('pycodegraph.renderers.%s' % renderer)
 	print(renderer_module.render(imports))
-	
+
 
 if __name__ == '__main__':
 	main()

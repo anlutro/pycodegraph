@@ -29,13 +29,13 @@ def find_root_module(path):
 	return '.'.join(reversed(module_parts))
 
 
-def find_module_files(root_path, depth, exclude):
+def find_module_files(root_path, exclude):
 	"""
 	Given a path, find all python files in that path and guess their module
 	names. Generates tuples of (module, path).
 	"""
-	def dir_excluded(d):
-		return d in exclude or d.startswith('.')
+	def dir_excluded(path):
+		return path in exclude or path.startswith('.')
 
 	root_module = find_root_module(root_path)
 	log.debug('resolved path %r to root_module %r', root_path, root_module)
@@ -65,8 +65,12 @@ def find_imports_in_file(path, root_module=None):
 	"""
 	Parse a python file, finding all imports.
 	"""
-	with open(path) as f:
-		return find_imports_in_code(f.read(), path=path, root_module=root_module)
+	with open(path) as filehandle:
+		return find_imports_in_code(
+			filehandle.read(),
+			path=path,
+			root_module=root_module,
+		)
 
 
 def find_root_module_path(path, root_module):
@@ -180,7 +184,7 @@ def find_imports(path, depth=0, include=None, exclude=None):
 		exclude = []
 
 	root_module = find_root_module(path)
-	module_files = list(find_module_files(path, depth=depth, exclude=exclude))
+	module_files = list(find_module_files(path, exclude=exclude))
 	log.info('found %d module files', len(module_files))
 
 	imports_to_search_for = set(
