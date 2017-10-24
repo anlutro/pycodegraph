@@ -73,6 +73,7 @@ def find_imports_in_file(path, root_module=None):
 
 
 def find_root_module_path(path, root_module):
+	path = os.path.abspath(path)
 	orig_path = path
 	root_end_part = root_module.replace('.', '/')
 	while not path.endswith('/' + root_end_part):
@@ -82,15 +83,12 @@ def find_root_module_path(path, root_module):
 	return path
 
 
-def resolve_relative_module(module, level, path, root_module=None, root_path=None):
+def resolve_relative_module(path, module, level=None, root_module=None, root_path=None):
 	path = os.path.abspath(path)
 	if root_path is None:
-		root_path = path
-		while not root_path.endswith('/' + root_module):
-			root_path = os.path.dirname(root_path)
-			if root_path == '/':
-				raise ValueError('could not find root path for %s from %r' % (
-					root_module, path))
+		if root_module is None:
+			raise ValueError('Must provider root_module or root_path!')
+		root_path = find_root_module_path(path, root_module)
 		# we need to get the parent directory of the root module directory for
 		# relpath to include the full module "path"
 		root_path = os.path.dirname(root_path)
@@ -99,7 +97,14 @@ def resolve_relative_module(module, level, path, root_module=None, root_path=Non
 	importing_from_path = os.path.relpath(importing_from_dir, root_path)
 	importing_from_module = importing_from_path.replace('.py', '').replace('/', '.')
 
-	# copied from python stdlib
+	if level is None:
+		level = 0
+		for character in module:
+			if character != '.':
+				break
+			level += 1
+		module = module[level:]
+
 	bits = importing_from_module.rsplit('.', level - 1)
 	if len(bits) < level:
 		raise ValueError('attempted relative import beyond top-level package')
@@ -107,7 +112,7 @@ def resolve_relative_module(module, level, path, root_module=None, root_path=Non
 	return '{}.{}'.format(base, module) if module else base
 
 
-def find_imports_in_code(code, path=None, root_module=None):
+def find_imports_in_code(code, path=None, root_module=None, root_path=None):
 	"""
 	Parse some Python code, finding all imports.
 	"""
@@ -127,12 +132,13 @@ def find_imports_in_code(code, path=None, root_module=None):
 			# relative imports
 			if node.level > 0:
 				module = ('.' * node.level) + (module if module else '')
-				if path and root_module:
+				if path and (root_module or root_path):
 					module = resolve_relative_module(
 						module,
 						node.level,
 						path,
 						root_module=root_module,
+						root_path=root_path,
 					)
 
 			for name in node.names:
@@ -169,8 +175,7 @@ def module_exists_on_filesystem(module, path, root_module=None):
 
 	# if there is a root module set, we need to traverse up the directory tree
 	if root_module:
-		dotdots = ['..'] * (root_module.count('.') + 1)
-		path = os.path.join(path, *dotdots)
+		path = find_root_module_path(path, root_module)
 
 	module_path = os.path.join(path, module.replace('.', '/'))
 
