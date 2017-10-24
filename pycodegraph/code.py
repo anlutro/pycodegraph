@@ -171,7 +171,10 @@ def find_root_module_path(path, root_module):
 	while not path.endswith('/' + root_end_part):
 		path = os.path.dirname(path)
 		if path == '/':
-			raise ValueError('could not find root module %r path based on %r' % (root_module, orig_path))
+			msg = 'could not find root module %r path based on %r' % (
+				root_module, orig_path
+			)
+			raise ValueError(msg)
 	return os.path.dirname(path)
 
 
@@ -246,17 +249,24 @@ class ImportAnalysis():
 				log.debug('skipping self-import %r -> %r', module, module_import)
 				continue
 
-			is_in_include = module_matches(module_import, self.include, allow_fnmatch=True)
-			is_in_search = module_matches(module_import, self.search)
+			is_in_include = module_matches(
+				module_import, self.include, allow_fnmatch=True
+			)
+			is_in_search = module_matches(
+				module_import, self.search
+			)
 
 			if is_in_include or is_in_search:
 				if not is_in_include:
 					short_import = self.find_module(short_import)
 					if not short_import:
-						log.debug('skipping import %r, could not find it on the filesystem', module_import)
+						log.debug('skipping import %r, could not find it on '
+							'the filesystem', module_import)
+						continue
 				imports.add((short_module, short_import))
 			else:
-				log.debug('skipping import %r, it is not in include or search', module_import)
+				log.debug('skipping import %r, it is not in include or search',
+					module_import)
 
 		return imports
 
