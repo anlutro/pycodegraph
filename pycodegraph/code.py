@@ -164,16 +164,11 @@ def module_matches(module, searches, allow_fnmatch=False):
 	return False
 
 
-def module_exists_on_filesystem(module, path, root_module=None):
+def module_exists_on_filesystem(module, path):
 	"""
 	Given a module name and a path to start from, check if there is a file on
 	the filesystem which corresponds to this module.
 	"""
-
-	# if there is a root module set, we need to traverse up the directory tree
-	if root_module:
-		path = find_root_module_path(path, root_module)
-
 	module_path = os.path.join(path, module.replace('.', '/'))
 	log.debug('module_path=%r', module_path)
 
@@ -211,9 +206,7 @@ class CodeAnalysis():
 		)
 
 	def module_exists(self, module):
-		return module_exists_on_filesystem(
-			module, self.path, root_module=self.root_module
-		)
+		return module_exists_on_filesystem(module, self.root_path)
 
 	def find_module(self, module):
 		if self.module_exists(module):
