@@ -1,11 +1,6 @@
 import pytest
 import os.path
-from pycodegraph.code import *
-
-
-def test_find_root_module():
-	root = find_root_module(__file__)
-	assert root == 'tests.unit.test_code'
+from pycodegraph.analysis.imports import *
 
 
 def test_find_imports():
@@ -46,19 +41,19 @@ def test_shorten_module():
 
 def test_module_exists_on_filesystem():
 	path = os.path.dirname(__file__)
-	assert module_exists_on_filesystem('test_code', path)
-	assert not module_exists_on_filesystem('unit.test_code', path)
-	assert not module_exists_on_filesystem('tests.unit.test_code', path)
+	assert module_exists_on_filesystem('test_analysis_imports', path)
+	assert not module_exists_on_filesystem('unit.test_analysis_imports', path)
+	assert not module_exists_on_filesystem('tests.unit.test_analysis_imports', path)
 
 	path = os.path.dirname(path)
-	assert not module_exists_on_filesystem('test_code', path)
-	assert module_exists_on_filesystem('unit.test_code', path)
-	assert not module_exists_on_filesystem('tests.unit.test_code', path)
+	assert not module_exists_on_filesystem('test_analysis_imports', path)
+	assert module_exists_on_filesystem('unit.test_analysis_imports', path)
+	assert not module_exists_on_filesystem('tests.unit.test_analysis_imports', path)
 
 	path = os.path.dirname(path)
-	assert not module_exists_on_filesystem('test_code', path)
-	assert not module_exists_on_filesystem('unit.test_code', path)
-	assert module_exists_on_filesystem('tests.unit.test_code', path)
+	assert not module_exists_on_filesystem('test_analysis_imports', path)
+	assert not module_exists_on_filesystem('unit.test_analysis_imports', path)
+	assert module_exists_on_filesystem('tests.unit.test_analysis_imports', path)
 
 
 @pytest.mark.parametrize('path, mod, root, expect', [

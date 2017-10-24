@@ -1,5 +1,5 @@
 from collections import defaultdict
-from pycodegraph.code import shorten_module
+from pycodegraph.analysis import shorten_module
 
 
 def get_all_modules(imports):

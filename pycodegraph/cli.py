@@ -8,7 +8,7 @@ import os
 
 import allib.logging
 
-from pycodegraph.code import find_imports
+from pycodegraph.analysis.imports import find_imports
 
 log = logging.getLogger()
 
