@@ -6,7 +6,7 @@ import os.path
 
 from . import find_root_module, find_root_module_path, find_module_files, shorten_module
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 def find_imports_in_file(path, root_path=None):

@@ -12,11 +12,12 @@ setup(
 	author='Andreas Lutro',
 	author_email='anlutro@gmail.com',
 	install_requires=[
-		'allib >= 0.3.0, < 0.4',
+		'allib >= 1.0, < 1.1',
 	],
 	entry_points={
 		'console_scripts': [
 			'pycodegraph=pycodegraph.cli:main',
+			'pcg-imports=pycodegraph.cli:ImportsEntrypoint.main',
 		],
 	}
 )
