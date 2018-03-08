@@ -115,9 +115,16 @@ class ImportAnalysis():
 		self.exclude = exclude
 
 		self.root_module = find_root_module(path)
-		log.info('guessed root module to be %r', self.root_module)
-		self.root_path = find_root_module_path(path, self.root_module)
-		log.info('guessed root path to be %r', self.root_path)
+		if self.root_module:
+			log.info('guessed root module to be %r', self.root_module)
+			self.root_path = find_root_module_path(path, self.root_module)
+			log.info('guessed root path to be %r', self.root_path)
+
+			self.depth += self.root_module.count('.') + 1
+			log.debug('depth=%d after finding root module', self.depth)
+		else:
+			log.info('no root module found, analyzing all modules in PWD')
+			self.root_path = path
 
 		self.module_files = list(find_module_files(
 			self.path, exclude=self.exclude, root_module=self.root_module

@@ -14,16 +14,18 @@ def find_root_module(path):
 	module) it corresponds to.
 	"""
 	path = os.path.abspath(path)
+	def exists(filename):
+		return os.path.exists(os.path.join(path, filename))
 	if os.path.isfile(path):
 		path = os.path.splitext(path)[0]
 	module_parts = []
 	while path != '/':
-		def exists(filename):
-			return os.path.exists(os.path.join(path, filename))
 		if exists('setup.py') or exists('setup.cfg'):
 			break
 		module_parts.append(os.path.basename(path))
 		path = os.path.dirname(path)
+	if path == '/':
+		return None
 	return '.'.join(reversed(module_parts))
 
 
