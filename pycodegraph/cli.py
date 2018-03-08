@@ -11,7 +11,7 @@ import allib.logging
 log = logging.getLogger(__name__)
 
 
-class Entrypoint:
+class Entrypoint(object):
 	def __init__(self):
 		self.parser = argparse.ArgumentParser()
 		self.add_argument = self.parser.add_argument
@@ -39,7 +39,7 @@ class Entrypoint:
 
 class ImportsEntrypoint(Entrypoint):
 	def __init__(self):
-		super().__init__()
+		super(ImportsEntrypoint, self).__init__()
 		self.add_argument('-c', '--clusters', action='store_true',
 			help='draw boxes around top-level modules')
 		self.add_argument('-d', '--depth', type=int, default=0,
