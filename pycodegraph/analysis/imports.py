@@ -157,18 +157,30 @@ class ImportAnalysis():
 
 		return False
 
+	def _is_module_excluded(self, module, path=None):
+		if not self.exclude:
+			return False
+
+		if module in self.exclude:
+			return True
+
+		if any(e in module.split('.') for e in self.exclude):
+			return True
+
+		if path and any(e in path.split('/') for e in self.exclude):
+			return True
+
+		return False
+
 	def find_imports_in_file(self, module, module_path):
 		"""
 		Scan a file for imports and add the relevant ones to the "imports" set.
 		"""
-		module_parts = module.split('.')
-		module_path_parts = module_path.split('/')
-		if self.exclude and (
-			any(e in module_parts for e in self.exclude)
-			or any(e in module_path_parts for e in self.exclude)
-		):
-			log.debug('skipping module because it is in exclude: %r (%s)',
-				module_path, module)
+		if self._is_module_excluded(module, module_path):
+			log.debug(
+				'skipping module because it is in exclude: %r (%s)',
+				module_path, module,
+			)
 			return []
 
 		short_module = shorten_module(module, self.depth)
@@ -179,6 +191,13 @@ class ImportAnalysis():
 		imports = set()
 
 		for module_import in module_imports:
+			if self._is_module_excluded(module_import):
+				log.debug(
+					'skipping module import of %s because it is in exclude',
+					module_import,
+				)
+				continue
+
 			short_import = shorten_module(module_import, self.depth)
 
 			if short_module == short_import:
@@ -188,20 +207,22 @@ class ImportAnalysis():
 			is_in_include = module_matches(
 				module_import, self.include, allow_fnmatch=True
 			)
-			is_in_search = module_matches(
-				module_import, self.search
-			)
+			is_in_search = module_matches(module_import, self.search)
 
 			if not is_in_include and not is_in_search:
-				log.debug('skipping import %r, it is not in include or search',
-					module_import)
+				log.debug(
+					'skipping import %r, it is not in include or search',
+					module_import,
+				)
 				continue
 
 			if not is_in_include:
 				short_import = self.find_module(short_import)
 				if not short_import:
-					log.debug('skipping import %r, could not find it on the filesystem',
-						module_import)
+					log.debug(
+						'skipping import %r, could not find it on the filesystem',
+						module_import,
+					)
 					continue
 
 			imports.add((short_module, short_import))

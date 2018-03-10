@@ -41,19 +41,19 @@ def test_shorten_module():
 
 def test_module_exists_on_filesystem():
 	path = os.path.dirname(__file__)
-	assert module_exists_on_filesystem('test_analysis_imports', path)
-	assert not module_exists_on_filesystem('unit.test_analysis_imports', path)
-	assert not module_exists_on_filesystem('tests.unit.test_analysis_imports', path)
+	assert module_exists_on_filesystem('analysis_import_test', path)
+	assert not module_exists_on_filesystem('unit.analysis_import_test', path)
+	assert not module_exists_on_filesystem('tests.unit.analysis_import_test', path)
 
 	path = os.path.dirname(path)
-	assert not module_exists_on_filesystem('test_analysis_imports', path)
-	assert module_exists_on_filesystem('unit.test_analysis_imports', path)
-	assert not module_exists_on_filesystem('tests.unit.test_analysis_imports', path)
+	assert not module_exists_on_filesystem('analysis_import_test', path)
+	assert module_exists_on_filesystem('unit.analysis_import_test', path)
+	assert not module_exists_on_filesystem('tests.unit.analysis_import_test', path)
 
 	path = os.path.dirname(path)
-	assert not module_exists_on_filesystem('test_analysis_imports', path)
-	assert not module_exists_on_filesystem('unit.test_analysis_imports', path)
-	assert module_exists_on_filesystem('tests.unit.test_analysis_imports', path)
+	assert not module_exists_on_filesystem('analysis_import_test', path)
+	assert not module_exists_on_filesystem('unit.analysis_import_test', path)
+	assert module_exists_on_filesystem('tests.unit.analysis_import_test', path)
 
 
 @pytest.mark.parametrize('path, mod, root, expect', [

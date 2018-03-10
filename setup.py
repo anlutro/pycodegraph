@@ -12,7 +12,7 @@ setup(
 	author='Andreas Lutro',
 	author_email='anlutro@gmail.com',
 	install_requires=[
-		'allib >= 1.0, < 1.1',
+		'allib >= 1.0, < 1.2',
 	],
 	entry_points={
 		'console_scripts': [
