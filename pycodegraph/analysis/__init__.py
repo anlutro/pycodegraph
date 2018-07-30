@@ -26,6 +26,10 @@ def find_root_module(path):
 		path = os.path.dirname(path)
 	if path == '/':
 		return None
+	# ideally we should be checking if this is defined in setup.py,
+	# but for now this is okay I think
+	if module_parts[-1] == 'src':
+		module_parts = module_parts[:-1]
 	return '.'.join(reversed(module_parts))
 
 
