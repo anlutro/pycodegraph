@@ -2,21 +2,26 @@ import pycodegraph.renderers.graphviz
 
 
 def render(imports):
-	dot = pycodegraph.renderers.graphviz.render(imports)
-	return dot.replace('    ', '\t').strip()
+    dot = pycodegraph.renderers.graphviz.render(imports)
+    return dot.replace("    ", "\t").strip()
 
 
 def test_render_with_no_imports():
-	dot = render([])
-	assert dot == '''
+    dot = render([])
+    assert (
+        dot
+        == """
 digraph {
 }
-	'''.strip()
+	""".strip()
+    )
 
 
 def test_render_with_simple_imports():
-	dot = render([('a', 'b'), ('a', 'c')])
-	assert dot == '''
+    dot = render([("a", "b"), ("a", "c")])
+    assert (
+        dot
+        == """
 digraph {
 	"a";
 	"b";
@@ -24,4 +29,5 @@ digraph {
 	"a" -> "b";
 	"a" -> "c";
 }
-	'''.strip()
+	""".strip()
+    )
