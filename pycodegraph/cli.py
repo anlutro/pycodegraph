@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 
 
 class Entrypoint(object):
-    def __init__(self):
-        self.parser = argparse.ArgumentParser()
+    def __init__(self, parser=None):
+        self.parser = parser or argparse.ArgumentParser()
         self.add_argument = self.parser.add_argument
         self.parse_args = self.parser.parse_args
         self.add_argument(
@@ -43,8 +43,8 @@ class Entrypoint(object):
 
 
 class ImportsEntrypoint(Entrypoint):
-    def __init__(self):
-        super(ImportsEntrypoint, self).__init__()
+    def __init__(self, parser=None):
+        super(ImportsEntrypoint, self).__init__(parser=parser)
         self.add_argument(
             "-c",
             "--clusters",
@@ -95,5 +95,15 @@ class ImportsEntrypoint(Entrypoint):
         print(renderer_module.render(imports))
 
 
-# TODO: this shouldn't be necessary
-main = ImportsEntrypoint.main
+def main():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="command")
+    commands = {"imports": ImportsEntrypoint}
+    for command in commands:
+        subparser = subparsers.add_parser(command)
+        commands[command] = commands[command](parser=subparser)
+    args = parser.parse_args()
+    if args.command:
+        commands[args.command].run(args)
+    else:
+        parser.print_help()
