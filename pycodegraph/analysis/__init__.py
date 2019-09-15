@@ -50,17 +50,26 @@ def find_root_module_path(path, root_module):
     return os.path.dirname(path)
 
 
-def find_module_files(root_path, exclude, root_module=None):
+def find_module_files(root_path, exclude=None, filter=None, root_module=None):
     """
 	Given a path, find all python files in that path and guess their module
 	names. Generates tuples of (module, path).
 	"""
+    exclude = set(exclude or [])
+    filter = set(filter) if filter else None
+
     if root_module is None:
         root_module = find_root_module(root_path)
         log.debug("resolved path %r to root_module %r", root_path, root_module)
 
     def dir_excluded(path):
-        return path in exclude or path.startswith(".")
+        if path.startswith("."):
+            return True
+        if path in exclude:
+            return True
+        if filter is not None:
+            return path not in filter
+        return False
 
     for root, dirs, files in os.walk(root_path):
         # prevents os.walk from recursing excluded directories

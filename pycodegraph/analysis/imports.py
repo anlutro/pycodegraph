@@ -101,11 +101,12 @@ def module_exists_on_filesystem(module, path):
 
 
 class ImportAnalysis:
-    def __init__(self, path, depth=0, include=None, exclude=None):
+    def __init__(self, path, depth=0, include=None, exclude=None, filter=None):
         self.path = path
         self.depth = depth
         self.include = include
         self.exclude = exclude
+        self.filter = filter
 
         self.root_module = find_root_module(path)
         if self.root_module:
@@ -121,7 +122,10 @@ class ImportAnalysis:
 
         self.module_files = list(
             find_module_files(
-                self.path, exclude=self.exclude, root_module=self.root_module
+                self.path,
+                exclude=self.exclude,
+                filter=self.filter,
+                root_module=self.root_module,
             )
         )
         log.info("found %d module files", len(self.module_files))
@@ -161,6 +165,12 @@ class ImportAnalysis:
 
         if path and any(e in path.split("/") for e in self.exclude):
             return True
+
+        if self.filter is not None:
+            return not (
+                any(e in path.split("/") for e in self.filter)
+                and any(e in module.split(".") for e in self.filter)
+            )
 
         return False
 
@@ -228,6 +238,6 @@ class ImportAnalysis:
         return imports
 
 
-def find_imports(path, depth=0, include=None, exclude=None):
-    analysis = ImportAnalysis(path, depth=depth, include=include, exclude=exclude)
+def find_imports(*args, **kwargs):
+    analysis = ImportAnalysis(*args, **kwargs)
     return analysis.find_imports()
