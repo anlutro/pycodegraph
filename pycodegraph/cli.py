@@ -26,18 +26,6 @@ class Entrypoint(object):
         self.add_argument("-v", "--verbose", action="store_true")
         self.add_argument("-vv", "--very-verbose", action="store_true")
 
-    @classmethod
-    def main(cls):
-        entrypoint = cls()
-        args = entrypoint.parse_args()
-        level = logging.WARNING
-        if args.very_verbose:
-            level = logging.DEBUG
-        elif args.verbose:
-            level = logging.INFO
-        allib.logging.setup_logging(log_level=level, colors=True)
-        entrypoint.run(args)
-
     def run(self, args):
         raise NotImplementedError("Entrypoint must implement run method")
 
@@ -103,6 +91,14 @@ def main():
         subparser = subparsers.add_parser(command)
         commands[command] = commands[command](parser=subparser)
     args = parser.parse_args()
+
+    level = logging.WARNING
+    if args.very_verbose:
+        level = logging.DEBUG
+    elif args.verbose:
+        level = logging.INFO
+    allib.logging.setup_logging(log_level=level, colors=True)
+
     if args.command:
         commands[args.command].run(args)
     else:
