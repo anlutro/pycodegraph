@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+import setuptools
 
 
-setup(
+setuptools.setup(
     name="pycodegraph",
-    packages=["pycodegraph"],
+    packages=setuptools.find_packages(include=("pycodegraph", "pycodegraph.*")),
     version="0.1",
     license="MIT",
     description="Analyze and make graphs from Python code.",
