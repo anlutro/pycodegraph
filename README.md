@@ -14,7 +14,7 @@ Install via pip (preferably into your project's virtualenv):
 
 Create a dot graph of your code and render it using dot:
 
-	pcg-imports --depth=1 ./my_code | dot -Tsvg > mygraph.svg
+	pycodegraph imports --depth=1 ./my_code | dot -Tsvg > mygraph.svg
 
 Usually you'll want to adjust the depth depending on project size and/or number of submodules.
 
