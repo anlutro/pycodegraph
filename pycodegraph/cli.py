@@ -47,6 +47,12 @@ class ImportsEntrypoint(Entrypoint):
             help="inspect submodules as well as top-level modules",
         )
         self.add_argument(
+            "--highlight",
+            type=str,
+            nargs='*',
+            help="highlight certain modules or module patterns",
+        )
+        self.add_argument(
             "-i",
             "--include",
             type=str,
@@ -70,7 +76,7 @@ class ImportsEntrypoint(Entrypoint):
         exclude = args.exclude or []
 
         imports = find_imports(
-            args.path, depth=args.depth, include=include, exclude=exclude
+            args.path, depth=args.depth, include=include, exclude=exclude, highlights=args.highlight
         )
         log.info("found total of %d imports in %r", len(imports), args.path)
         if not imports:
@@ -80,7 +86,7 @@ class ImportsEntrypoint(Entrypoint):
         renderer = "graphviz"
 
         renderer_module = importlib.import_module("pycodegraph.renderers.%s" % renderer)
-        print(renderer_module.render(imports))
+        print(renderer_module.render(imports, highlights=args.highlight))
 
 
 def main():
