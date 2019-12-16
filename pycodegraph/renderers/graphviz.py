@@ -22,8 +22,8 @@ def locate_clusters(imports, depth=0):
 
 def render_attrs(attrs):
     if not attrs:
-        return ''
-    return ' [' + ', '.join('%s=%s' % (k,v) for k,v in attrs.items()) + ']'
+        return ""
+    return " [" + ", ".join("%s=%s" % (k, v) for k, v in attrs.items()) + "]"
 
 
 def node_matches_highlights(node, highlights):
@@ -37,12 +37,12 @@ def node_matches_highlights(node, highlights):
 def render_nodes(nodes, indent=4, shape=None, highlights=None):
     attrs = {}
     if shape:
-        attrs['shape'] = shape
+        attrs["shape"] = shape
     lines = []
     for node in nodes:
         node_attrs = attrs.copy()
         if node_matches_highlights(node, highlights):
-            node_attrs.update(style='filled', fillcolor='lightblue')
+            node_attrs.update(style="filled", fillcolor="lightblue")
         line = " " * indent + '"%s"%s;' % (node, render_attrs(node_attrs))
         lines.append(line)
     return sorted(lines)
@@ -73,7 +73,9 @@ def render(imports, font=None, rankdir=None, clusters=False, highlights=None):
     if clusters:
         for cluster, nodes in locate_clusters(imports):
             if len(nodes) > 2:
-                lines.extend(render_subgraph(cluster, nodes, indent=4, highlights=highlights))
+                lines.extend(
+                    render_subgraph(cluster, nodes, indent=4, highlights=highlights)
+                )
             else:
                 lines.extend(render_nodes(nodes, indent=4, highlights=highlights))
     else:

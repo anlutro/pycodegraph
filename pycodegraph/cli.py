@@ -49,7 +49,7 @@ class ImportsEntrypoint(Entrypoint):
         self.add_argument(
             "--highlight",
             type=str,
-            nargs='*',
+            nargs="*",
             help="highlight certain modules or module patterns",
         )
         self.add_argument(
@@ -76,7 +76,11 @@ class ImportsEntrypoint(Entrypoint):
         exclude = args.exclude or []
 
         imports = find_imports(
-            args.path, depth=args.depth, include=include, exclude=exclude, highlights=args.highlight
+            args.path,
+            depth=args.depth,
+            include=include,
+            exclude=exclude,
+            highlights=args.highlight,
         )
         log.info("found total of %d imports in %r", len(imports), args.path)
         if not imports:

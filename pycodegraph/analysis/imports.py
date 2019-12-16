@@ -101,7 +101,9 @@ def module_exists_on_filesystem(module, path):
 
 
 class ImportAnalysis:
-    def __init__(self, path, depth=0, include=None, exclude=None, filter=None, highlights=None):
+    def __init__(
+        self, path, depth=0, include=None, exclude=None, filter=None, highlights=None
+    ):
         self.path = path
         self.depth = depth
         self.include = include
@@ -180,7 +182,12 @@ class ImportAnalysis:
             return True
 
         for highlight in self.highlights:
-            if module.startswith(highlight) or fnmatch(module, highlight) or import_module.startswith(highlight) or fnmatch(import_module, highlight):
+            if (
+                module.startswith(highlight)
+                or fnmatch(module, highlight)
+                or import_module.startswith(highlight)
+                or fnmatch(import_module, highlight)
+            ):
                 return True
 
     def find_imports_in_file(self, module, module_path):
@@ -230,7 +237,8 @@ class ImportAnalysis:
                 if not short_import:
                     log.debug(
                         "skipping import %r -> %r, could not find it on the filesystem",
-                        module, module_import,
+                        module,
+                        module_import,
                     )
                     continue
 
