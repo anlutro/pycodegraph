@@ -101,12 +101,15 @@ def module_exists_on_filesystem(module, path):
 
 
 class ImportAnalysis:
-    def __init__(self, path, depth=0, include=None, exclude=None, filter=None):
+    def __init__(
+        self, path, depth=0, include=None, exclude=None, filter=None, highlights=None
+    ):
         self.path = path
         self.depth = depth
         self.include = include
         self.exclude = exclude
         self.filter = filter
+        self.highlights = highlights
 
         self.root_module = find_root_module(path)
         if self.root_module:
@@ -174,6 +177,19 @@ class ImportAnalysis:
 
         return False
 
+    def matches_highlight(self, module, import_module):
+        if not self.highlights:
+            return True
+
+        for highlight in self.highlights:
+            if (
+                module.startswith(highlight)
+                or fnmatch(module, highlight)
+                or import_module.startswith(highlight)
+                or fnmatch(import_module, highlight)
+            ):
+                return True
+
     def find_imports_in_file(self, module, module_path):
         """
 		Scan a file for imports and add the relevant ones to the "imports" set.
@@ -220,10 +236,15 @@ class ImportAnalysis:
                 short_import = self.find_module(short_import)
                 if not short_import:
                     log.debug(
-                        "skipping import %r, could not find it on the filesystem",
+                        "skipping import %r -> %r, could not find it on the filesystem",
+                        module,
                         module_import,
                     )
                     continue
+
+            if not self.matches_highlight(short_module, short_import):
+                log.debug("skipping import %r, not defined as highlight")
+                continue
 
             imports.add((short_module, short_import))
 
