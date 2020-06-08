@@ -6,7 +6,7 @@ import setuptools
 setuptools.setup(
     name="pycodegraph",
     version="0.1.2",
-    license="MIT",
+    license="GPL-3.0",
     description="Analyze and make graphs from Python code.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
