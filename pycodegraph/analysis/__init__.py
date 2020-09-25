@@ -10,9 +10,9 @@ def shorten_module(module, depth):
 
 def find_root_module(path):
     """
-	Given a path, very naively try to guess what python package (aka root
-	module) it corresponds to.
-	"""
+    Given a path, very naively try to guess what python package (aka root
+    module) it corresponds to.
+    """
     path = os.path.abspath(path)
 
     def exists(filename):
@@ -56,9 +56,9 @@ def find_root_module_path(path, root_module):
 
 def find_module_files(root_path, exclude=None, filter=None, root_module=None):
     """
-	Given a path, find all python files in that path and guess their module
-	names. Generates tuples of (module, path).
-	"""
+    Given a path, find all python files in that path and guess their module
+    names. Generates tuples of (module, path).
+    """
     exclude = set(exclude or [])
     filter = set(filter) if filter else None
 

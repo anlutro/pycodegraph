@@ -11,8 +11,8 @@ log = logging.getLogger(__name__)
 
 def find_imports_in_file(path, root_path=None):
     """
-	Parse a python file, finding all imports.
-	"""
+    Parse a python file, finding all imports.
+    """
     with open(path) as filehandle:
         return find_imports_in_code(filehandle.read(), path=path, root_path=root_path)
 
@@ -41,8 +41,8 @@ def resolve_relative_module(path, module, root_path, level=None):
 
 def find_imports_in_code(code, path=None, root_path=None):
     """
-	Parse some Python code, finding all imports.
-	"""
+    Parse some Python code, finding all imports.
+    """
     try:
         tree = ast.parse(code)
     except SyntaxError:
@@ -77,8 +77,8 @@ def find_imports_in_code(code, path=None, root_path=None):
 
 def module_matches(module, searches, allow_fnmatch=False):
     """
-	Check if a module matches some search terms.
-	"""
+    Check if a module matches some search terms.
+    """
     for search in searches:
         if module == search or module.startswith(search + "."):
             return True
@@ -89,9 +89,9 @@ def module_matches(module, searches, allow_fnmatch=False):
 
 def module_exists_on_filesystem(module, path):
     """
-	Given a module name and a path to start from, check if there is a file on
-	the filesystem which corresponds to this module.
-	"""
+    Given a module name and a path to start from, check if there is a file on
+    the filesystem which corresponds to this module.
+    """
     module_path = os.path.join(path, module.replace(".", "/"))
 
     return os.path.isfile(module_path + ".py") or (
@@ -192,8 +192,8 @@ class ImportAnalysis:
 
     def find_imports_in_file(self, module, module_path):
         """
-		Scan a file for imports and add the relevant ones to the "imports" set.
-		"""
+        Scan a file for imports and add the relevant ones to the "imports" set.
+        """
         if self._is_module_excluded(module, module_path):
             log.debug(
                 "skipping module because it is in exclude: %r (%s)", module_path, module
